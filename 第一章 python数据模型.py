@@ -26,17 +26,17 @@ new_card = Card('5', 'heart')
 
 class FrenchDeck:
     ranks = [2,3,4,5,6,7,8,9,10,J,Q,K,A]
-	suits = 'spades diamonds clubs hearts'.split()
+    suits = 'spades diamonds clubs hearts'.split()
 	
-	def __init__(self):
-		self.__cards = [Card(rank, suit) for suit in self.suits
-										for rank in self.ranks]
+    def __init__(self):
+        self.__cards = [Card(rank, suit) for suit in self.suits
+                                         for rank in self.ranks]
 										
-	def __len__(self): 
-		return len(self.__cards)
+    def __len__(self): 
+        return len(self.__cards)
 		
-	def __getitem__(self, position):
-		return self.__cards[position]
+    def __getitem__(self, position):
+        return self.__cards[position]
 		
 deck = Frenchdeck()
 len(deck) 利用__len__方法
