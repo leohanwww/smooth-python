@@ -42,3 +42,34 @@ deck = Frenchdeck()
 len(deck) 利用__len__方法
 deck[0] 利用__getitem__方法使Card变成可迭代 deck[:3] deck[12::13]每隔13张拿牌
 还能加入__setitem__(self, rank, suit)方法使洗牌变为可能
+
+
+通过内置方法调用特殊方法 如 len iter str
+
+
+from math import hypot
+
+calss Vector:
+	
+	def __init__(self, x=0, y=0):
+		self.x = x
+		self.y = y
+		
+	'''控制台调用返回的字符,用%r表示用repr的形式，能够重现所代表的对象
+	    题外话：如果没定义__str__ 系统会默认用__repr__代替'''	
+	def __repr__(self):
+		return 'Vector (%r, %r)' % (self.x, self.y)
+	
+	def __abs__(self):
+		return hypot(self.x, self.y)
+	
+	def __add__(self, other):
+		x = self.x + other.x
+		y = self.y + other.y
+		return Vector(x, y)
+	
+	def __mul__(self, num):
+		return Vector(self.x * num, self.y * num)
+	
+	def __bool__(self):
+		return bool(abs(self))
