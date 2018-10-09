@@ -63,6 +63,9 @@ calss Vector:
 	def __abs__(self):
 		return hypot(self.x, self.y)
 	
+	'''通过 __add__ 和 __mul__，示例 1-2 为向量类带来了 + 和 * 这两个算术运算符
+	这两个方法的返回值都是新创建的向量对象，被操作的两个向量（self 或 other）还是原封不动，
+	代码里只是读取了它们的值而已。中缀运算符的基本原则就是不改变操作对象，而是产出一个新的值'''
 	def __add__(self, other):
 		x = self.x + other.x
 		y = self.y + other.y
