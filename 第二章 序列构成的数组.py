@@ -138,3 +138,9 @@ coordinates: LatLong(lat=28.613889, long=77.208889)
 的作用跟 City(*delhi_data) 是一样的。
 ❸ _asdict() 把具名元组以 collections.OrderedDict 的形式返
 回，我们可以利用它来把元组里的信息友好地呈现出来。
+
+切片
+
+对对象进行切片
+s[start:stop:step]
+python对序列求值的时候，调用的是seq.__getitem__(slice(start:stop:step))
