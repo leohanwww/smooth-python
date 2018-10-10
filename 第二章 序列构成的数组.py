@@ -144,3 +144,38 @@ coordinates: LatLong(lat=28.613889, long=77.208889)
 对对象进行切片
 s[start:stop:step]
 python对序列求值的时候，调用的是seq.__getitem__(slice(start:stop:step))
+切片时这么使用item[slice(start:stop:step)]
+
+给切片赋值
+>>> l = list(range(10))
+>>> l
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> l[2:5] = [20, 30]
+>>> l
+[0, 1, 20, 30, 5, 6, 7, 8, 9]
+>>> del l[5:7]
+>>> l
+[0, 1, 20, 30, 5, 8, 9]
+>>> l[3::2] = [11, 22]
+>>> l
+[0, 1, 20, 11, 5, 22, 9]
+>>> l[2:5] = 100 ➊
+Traceback (most recent call last):
+File "<stdin>", line 1, in <module>
+TypeError: can only assign an iterable
+2
+2
+>>> l[2:5] = [100]
+>>> l
+[0, 1, 100, 22, 9]
+➊ 如果赋值的对象是一个切片，那么赋值语句的右侧必须是个可迭代
+对象。即便只有单独一个值，也要把它转换成可迭代的序列。
+
+序列的拼接 + *
+用 * 来初始化由列表组成的列表
+>>> board = [['_'] * 3 for i in range(3)]
+>>> board
+[['_', '_', '_'], ['_', '_', '_'], ['_', '_', '_']]
+>>> board[1][2] = 'x'
+>>> board
+[['_', '_', '_'], ['_', '_', 'x'], ['_', '_', '_']]
