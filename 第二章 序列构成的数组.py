@@ -209,6 +209,10 @@ array([[ 0, 4, 8],
 [ 3, 7, 11]])
 
 
+>>> from queue import Queue 队列
+>>> q = Queue(maxsize=10)
+>>> q.put(i for i in range(3))
+>>> q.get()
 
 >>> from collections import deque 双向队列
 >>> dq = deque(range(10), maxlen=10) ➊
