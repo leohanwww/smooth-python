@@ -180,6 +180,7 @@ TypeError: can only assign an iterable
 >>> board
 [['_', '_', '_'], ['_', '_', 'x'], ['_', '_', '_']]
 
+<<<<<<< HEAD:2 序列构成的数组.py
 序列的增量赋值 += *=
 += 背后的特殊方法是 __iadd__ （用于“就地加法”）。但是如果一个类
 没有实现这个方法的话，Python 会退一步调用 __add__
@@ -262,3 +263,59 @@ memoryview 是一个内置类，它能让用户在不复制内容的情况下操
 >>> data
 bytearray(b'zbcefg') 原来的data也随之改变了
 
+
+
+Numpy和Scipy
+
+>>> import numpy ➊
+>>> a = numpy.arange(12) ➋
+>>> a
+array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+>>> type(a)
+<class 'numpy.ndarray'>
+>>> a.shape ➌
+(12,)
+>>> a.shape = 3, 4 ➍
+>>> a
+array([[ 0, 1, 2, 3],
+[ 4, 5, 6, 7],
+[ 8, 9, 10, 11]])
+>>> a[2] ➎
+array([ 8, 9, 10, 11])
+>>> a[2, 1] ➏
+9 >>> a[:, 1] ➐
+array([1, 5, 9])
+>>> a.transpose() ➑
+array([[ 0, 4, 8],
+[ 1, 5, 9],
+[ 2, 6, 10],
+[ 3, 7, 11]])
+
+
+>>> from queue import Queue 队列
+>>> q = Queue(maxsize=10)
+>>> q.put(i for i in range(3))
+>>> q.get()
+
+>>> from collections import deque 双向队列
+>>> dq = deque(range(10), maxlen=10) ➊
+>>> dq
+deque([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], maxlen=10)
+>>> dq.rotate(3) ➋
+>>> dq
+deque([7, 8, 9, 0, 1, 2, 3, 4, 5, 6], maxlen=10)
+队列的旋转操作接受一个参数 n，当 n > 0 时，队列的最右边的 n
+个元素会被移动到队列的左边。当 n < 0 时，最左边的 n 个元素会被
+移动到右边。
+>>> dq.rotate(-4)
+>>> dq
+deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 0], maxlen=10)
+>>> dq.appendleft(-1) ➌ 对已满的队列做尾部添加，它的头部会被删除
+>>> dq
+deque([-1, 1, 2, 3, 4, 5, 6, 7, 8, 9], maxlen=10)
+>>> dq.extend([11, 22, 33]) ➍
+>>> dq
+deque([3, 4, 5, 6, 7, 8, 9, 11, 22, 33], maxlen=10)
+>>> dq.extendleft([10, 20, 30, 40]) ➎ 左添加会依次将迭代器里的元素逐个添加到队列的左边，所以会呈现出倒序
+>>> dq
+deque([40, 30, 20, 10, 3, 4, 5, 6, 7, 8], maxlen=10)
