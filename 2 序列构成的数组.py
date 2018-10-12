@@ -179,3 +179,86 @@ TypeError: can only assign an iterable
 >>> board[1][2] = 'x'
 >>> board
 [['_', '_', '_'], ['_', '_', 'x'], ['_', '_', '_']]
+
+序列的增量赋值 += *=
++= 背后的特殊方法是 __iadd__ （用于“就地加法”）。但是如果一个类
+没有实现这个方法的话，Python 会退一步调用 __add__
+>>> a += b
+如果 a 实现了 __iadd__ 方法，就会调用这个方法。。同时对可变序列
+（例如 list、bytearray 和 array.array）来说，a 会就地改动,就
+像调用了 a.extend(b) 一样。但是如果 a 没有实现 __iadd__ 的话，a
++= b 这个表达式的效果就变得跟 a = a + b 一样了：首先计算 a +
+b，得到一个新的对象，然后赋值给 a。也就是说，在这个表达式中，
+变量名会不会被关联到新的对象，完全取决于这个类型有没有实现
+__iadd__ 这个方法。
+
+list.sort方法和内置函数sorted
+list.sort方法就地排序，并返回None
+内置函数sorted创建一个新列表作为返回值，这个方法可以接受任何形式的可迭代对象作为参数，
+甚至包括不可变序列或生成器。而不管 sorted 接受的是怎样的参
+数，它最后都会返回一个列表。
+参数 reverse 
+     key  一个只有一个参数的函数 可以是key = str.lower() key = len
+
+bisect模块
+
+bisect.bisect_left(a, x, lo=0, hi=len(a))
+Locate the insertion point for x in a to maintain sorted order. 定位插入数字x位于a的哪个位置，返回定位到的位置的值
+>>> b = [2, 4, 6, 8, 10]
+>>> bisect.bisect(b, 5)
+2 #在第二个数字的left位
+>>> b
+[2, 4, 6, 8, 10]
+
+根据一个分数，找到它所对应的成绩
+>>> def grade(score, breakpoints=[60, 70, 80, 90], grades='FDCBA'):
+... i = bisect.bisect(breakpoints, score)
+... return grades[i]
+...
+>>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
+['F', 'A', 'C', 'C', 'B', 'A', 'A']
+
+bisect.insort(a, x, lo=0, hi=len(a))
+Insert x in a in sorted order. 把x插入到有序序列a中，原地插入，改变原来的序列
+
+>>> x = 7
+>>> bisect.insort(b, x)
+>>> b
+[2, 4, 6, 7, 8, 10]
+
+数组
+数组有类似列表的方法，还有自有方法.frombytes .tofile
+from array import array
+f = array('d', (random() for i in range(10**5)))
+with open('floats.bin', 'wb') as fp
+f.tofile(fp) 写到文件
+f2 = array('d') 空数组
+f2.fromfile(fp, 10**5) 从文件读取
+
+b = array.array(a.typecode, sorted(a))
+
+Type code	C Type	Python Type	Minimum size in bytes	Notes
+'b'	signed char	int	1	 
+'B'	unsigned char	int	1	 
+'u'	Py_UNICODE	Unicode character	2	(1)
+'h'	signed short	int	2	 
+'H'	unsigned short	int	2	 
+'i'	signed int	int	2	 
+'I'	unsigned int	int	2	 
+'l'	signed long	int	4	 
+'L'	unsigned long	int	4	 
+'q'	signed long long	int	8	(2)
+'Q'	unsigned long long	int	8	(2)
+'f'	float	float	4	 
+'d'	double	float	8	 
+
+memoryview
+memoryview 是一个内置类，它能让用户在不复制内容的情况下操作同
+一个数组的不同切片
+
+>>> data = bytearray(b'abcefg')
+>>> v = memoryview(data)
+>>> v[0] = ord(b'z') 改变memoryview
+>>> data
+bytearray(b'zbcefg') 原来的data也随之改变了
+
