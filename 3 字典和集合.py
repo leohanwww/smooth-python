@@ -61,3 +61,26 @@ True
 ... if code < 66}
 {1: 'UNITED STATES', 55: 'BRAZIL', 62: 'INDONESIA', 7: 'RUSSIA'}
 
+常见映射方法
+
+dict 
+collections.defaultdict 
+collections.OrdereDict
+
+d.setdefault(k,[default]) 若字典里有键k，则把它对应的值设置为 default，然后返回这个值；若无，则让 d[k] = default，然后返回 default
+>>> d_ne.setdefault('k', [99,])
+[99]
+>>> d_ne
+{'s': [1], 'd': [1], 'j': [1], 'i': [1], 'h': [1], 'r': [1], 'm': [1], 'c': [1], 'k': [99]}
+
+>>> d_ne['b'] = 88 #调用d_ne.__setitem__()
+>>> d_ne
+{'s': 66, 'd': [1], 'j': [1], 'i': [1], 'h': [1], 'r': [1], 'm': [1], 'c': [1], 'k': [99], 'tt': 55, 'b': 88}
+
+映射的弹性键查询
+有时候为了方便起见，就算某个键在映射里不存在，我们也希望在通过
+这个键读取值的时候能得到一个默认值。有两个途径能帮我们达到这个
+目的，一个是通过 defaultdict 这个类型而不是普通的 dict，另一个
+是给自己定义一个 dict 的子类，然后在子类中实现 __missing__ 方
+法。
+defaultdict：处理找不到的键的一个选择
