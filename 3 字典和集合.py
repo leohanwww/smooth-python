@@ -84,3 +84,146 @@ d.setdefault(k,[default]) 若字典里有键k，则把它对应的值设置为 d
 是给自己定义一个 dict 的子类，然后在子类中实现 __missing__ 方
 法。
 defaultdict：处理找不到的键的一个选择
+
+特殊方法__missing__
+__missing__ 方法只会被 __getitem__ 调用（比如在表达
+式 d[k] 中）提供 __missing__ 方法对 get 或者
+__contains__（in 运算符会用到这个方法）这些方法的使用没有
+影响
+示例 3-7　StrKeyDict0 在查询的时候把非字符串的键转换为字符
+串
+class StrKeyDict0(dict): ➊
+
+    def __missing__(self, key):
+        if isinstance(key, str): ➋
+            raise KeyError(key)
+    return self[str(key)] ➌ #把非字符变成字符以便继续查找
+		
+    def get(self, key, default=None):
+        try:
+            return self[key] ➍
+    except KeyError:
+        return default ➎
+		
+    def __contains__(self, key):
+        return key in self.keys() or str(key) in self.keys() ➏
+❶ StrKeyDict0 继承了 dict。
+❷ 如果找不到的键本身就是字符串，那就抛出 KeyError 异常。
+❸ 如果找不到的键不是字符串，那么把它转换成字符串再进行查找。
+❹ get 方法把查找工作用 self[key] 的形式委托给 __getitem__，这
+样在宣布查找失败之前，还能通过 __missing__ 再给某个键一个机
+会。
+❺ 如果抛出 KeyError，那么说明 __missing__ 也失败了，于是返回
+default。
+❻ 先按照传入键的原本的值来查找（我们的映射类型中可能含有非字
+符串的键），如果没找到，再用 str() 方法把键转换成字符串再查找
+一次。
+下面来看看为什么 isinstance(key, str) 测试在上面的
+__missing__ 中是必需的。
+如果没有这个测试，只要 str(k) 返回的是一个存在的键，那么
+__missing__ 方法是没问题的，不管是字符串键还是非字符串键，它
+都能正常运行。但是如果 str(k) 不是一个存在的键，代码就会陷入无
+限递归。这是因为 __missing__ 的最后一行中的 self[str(key)] 会
+调用 __getitem__，而这个 str(key) 又不存在，于是 __missing__
+又会被调用。
+
+字典变种
+
+collections.OrderedDict
+　　这个类型在添加键的时候会保持顺序，因此键的迭代次序总是一致
+的。OrderedDict 的 popitem 方法默认删除并返回的是字典里的最后
+一个元素，
+import collections
+d = collections.OrderedDict()
+
+collections.Counter
+　　这个映射类型会给键准备一个整数计数器。每次更新一个键的时候
+都会增加这个计数器。所以这个类型可以用来给可散列表对象计数，或
+者是当成多重集来用——多重集合就是集合里的元素可以出现不止一
+次。Counter 实现了 + 和 - 运算符用来合并记录，还有像
+most_common([n]) 这类很有用的方法。most_common([n]) 会按照次
+序返回映射里最常见的 n 个键和它们的计数
+ |  >>> c = Counter('abcdeabcdabcaba')  # count elements from a string
+ |
+ |  >>> c.most_common(3)                # three most common elements
+ |  [('a', 5), ('b', 4), ('c', 3)]
+ |  >>> sorted(c)                       # list all unique elements
+ |  ['a', 'b', 'c', 'd', 'e']
+ |  >>> c.update('aaaa')                # insert into c 
+ |  >>> c.most_common(3)
+ |  >>> [('a', 8), ('b', 4), ('c', 3)]
+ 
+colllections.UserDict
+　　这个类其实就是把标准 dict 用纯 Python 又实现了一遍。
+
+子类化UserDict
+就创造自定义映射类型来说，以 UserDict 为基类，总比以普通的
+dict 为基类要来得方便。
+UserDict 有一个叫作 data 的属性，是 dict 的实例，这个属性实际上
+是 UserDict 最终存储数据的地方。
+
+示例 3-8　无论是添加、更新还是查询操作，StrKeyDict 都会把
+非字符串的键转换为字符串
+import collections
+class StrKeyDict(collections.UserDict): ➊
+	def __missing__(self, key): ➋
+		if isinstance(key, str):
+		raise KeyError(key)
+	return self[str(key)]
+	
+	def __contains__(self, key):
+		return str(key) in self.data ➌
+		
+	def __setitem__(self, key, item):
+		self.data[str(key)] = item ➍
+		
+❶ StrKeyDict 是对 UserDict 的扩展。
+❷ __missing__ 跟示例 3-7 里的一模一样。
+❸ __contains__ 则更简洁些。这里可以放心假设所有已经存储的键都
+是字符串。因此，只要在 self.data 上查询就好了，并不需要像
+StrKeyDict0 那样去麻烦 self.keys()。
+❹ __setitem__ 会把所有的键都转换成字符串。由于把具体的实现委
+托给了 self.data 属性，这个方法写起来也不难。
+
+
+不可变映射
+
+　用 MappingProxyType 来获取字典的只读实例
+mappingproxy
+>>> from types import MappingProxyType
+>>> d = {'A':99}
+>>> d_proxy = MappingProxyType(d)
+>>> d_proxy
+>>> mappingproxy({'A': 99})
+d_proxy 是动态的，也就是说对 d 所做的任何改动都会反馈到它上
+面。
+
+集合论
+
+集合的本质是许多唯一对象的聚集。因此，集合可以用于去重
+集合中的元素必须是可散列的，set 类型本身是不可散列的，但是
+frozenset 可以。因此可以创建一个包含不同 frozenset 的 set。
+
+集合可进行 a | b 合集 a & b 交集 a - b 差集
+needles & haystack 求两集的相同元素
+set(needles) & set(haystack) 用在任意可迭代对象上
+
+集合的表达式
+>>> s = {1} #有内容的集合用{}
+>>> type(s)
+<class 'set'>
+>>> s
+{1}
+>>> s.pop()
+1 >>> s
+set() #空集的表达式
+frozenset()没有特殊语句，只能用构造方法创建 frozenset(range(10))
+
+集合推导式同字典推导和列表推导式
+{chr(i) for i in range(32, 256)}
+
+集合的操作
+
+set.remove(obj)和set.discard(obj)的区别在于，当obj存在于set中时，都将其删除；但当obj不存在于set中时，remove()会报错，discard()不会。
+
+
