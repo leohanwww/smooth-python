@@ -10,7 +10,8 @@
 >>> b
 b'caf\xc3\xa9' # ➌
 >>> len(b) # ➍
-5 >>> b.decode('utf8') # ➎ 把b解码成str对象
+5 
+>>> b.decode('utf8') # ➎ 把b解码成str对象
 'café
 
 bytes对象和bytearray对象
@@ -130,3 +131,29 @@ True
 使用 NFKC 和 NFKD 规范化形式时要小心，而且只能在特
 殊情况中使用，例如搜索和索引，而不能用于持久存储，因为这两
 种转换会导致数据损失。
+
+通用的Unicode排序
+>>> import pyuca #使用PyUCA库
+>>> coll = pyuca.Collator()
+>>> fruits = ['caju', 'atemoia', 'cajá', 'açaí', 'acerola']
+>>> sorted_fruits = sorted(fruits, key=coll.sort_key)
+>>> sorted_fruits
+['açaí', 'acerola', 'atemoia', 'cajá', 'caju']
+
+
+import re
+re_numbers_str = re.compile(r'\d+') ➊#前两个正则表达式是字符串类型。
+re_words_str = re.compile(r'\w+')
+re_numbers_bytes = re.compile(rb'\d+') ➋#后两个正则表达式是字节序列类型。
+re_words_bytes = re.compile(rb'\w+')
+text_str = ("Ramanujan saw \u0be7\u0bed\u0be8\u0bef" ➌
+" as 1729 = 1³ + 12³ = 9³ + 10³.") ➍
+text_bytes = text_str.encode('utf_8') ➎ #字节序列只能用字节序列正则表达式搜索。
+print('Text', repr(text_str), sep='\n ')
+print('Numbers')
+print(' str :', re_numbers_str.findall(text_str)) ➏
+print(' bytes:', re_numbers_bytes.findall(text_bytes)) ➐
+print('Words')
+print(' str :', re_words_str.findall(text_str)) ➑
+print(' bytes:', re_words_bytes.findall(text_bytes)) ➒
+
