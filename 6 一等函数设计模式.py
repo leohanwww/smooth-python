@@ -75,3 +75,36 @@ def large_order_promo(order):
 <Order total: 10.00 due: 9.30>
 >>> Order(joe, cart, large_order_promo)
 <Order total: 42.00 due: 42.00>
+
+可以构建一个优惠策略选择
+promos = [fidelity_promo, bulk_item_promo, large_order_promo] ➊
+def best_promo(order): ➋
+	"""选择可用的最佳折扣
+	"""
+	return max(promo(order) for promo in promos) ➌
+	
+通过找出模块里的全部策略
+globals()
+　　返回一个字典，表示当前的全局符号表。这个符号表始终针对当前
+模块（对函数或方法来说，是指定义它们的模块，而不是调用它们的模
+块）。
+promos = [globals()[name] for name in globals() ➊
+if name.endswith('_promo') ➋
+and name != 'best_promo'] ➌
+#这是一个列表生成式，生成模块方法里名字以_promo结尾的列表
+def best_promo(order): ➋
+	"""选择可用的最佳折扣
+	"""
+	return max(promo(order) for promo in promos) ➌
+	
+内省单独的 promotions 模块，构建 promos 列表
+promos = [func for name, func in
+                   inspect.getmembers(promotions, inspect.isfunction)]
+#这个生成式获取模块promotions里的函数，
+#inspect.getmembers 函数用于获取对象（这里是 promotions 模块）
+#的属性，第二个参数是可选的判断条件（一个布尔值函数）。我们使用
+#的是 inspect.isfunction，只获取模块中的函数。
+def best_promo(order):
+	"""选择可用的最佳折扣
+	"""
+	return max(promo(order) for promo in promos)
