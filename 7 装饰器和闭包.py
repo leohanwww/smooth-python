@@ -66,6 +66,7 @@ running register(<function f2 at 0x10063b268>)
 register 装饰器返回的函数与通过参数传入的相同。实际上，大
 多数装饰器会在内部定义一个函数，然后将其返回。
 
+<<<<<<< HEAD
 改进优惠策略
 promos = [] ➊
 def promotion(promo_func): ➋
@@ -105,6 +106,9 @@ def best_promo(order): ➍
 ❹ best_promos 无需修改，因为它依赖 promos 列表。
 
 全局变量
+=======
+变量的作用域
+>>>>>>> fd9a985442c736a7c28ee49d403fed978e383d1b
 如果在函数中赋值时想让解释器把 b 当成全局变量，要使用 global 声
 明：
 >>> b = 6
@@ -115,6 +119,7 @@ def best_promo(order): ➍
 ... b = 9
 ...
 >>> f3(3)
+<<<<<<< HEAD
 3
 6 
 >>> b
@@ -395,5 +400,8 @@ snooze: 0.12414693832397461s
 snooze: 0.1241159439086914s
 snooze: 0.12412118911743164s
 =======
+36
+>>> b
+9
 >>>>>>> fd9a985442c736a7c28ee49d403fed978e383d1b
 
