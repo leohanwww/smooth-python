@@ -394,4 +394,6 @@ $ python3 clockdeco_param_demo1.py
 snooze: 0.12414693832397461s
 snooze: 0.1241159439086914s
 snooze: 0.12412118911743164s
+=======
+>>>>>>> fd9a985442c736a7c28ee49d403fed978e383d1b
 
