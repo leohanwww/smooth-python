@@ -69,7 +69,7 @@ def frombytes(cls, octets): # 不用传入 self 参数；相反，要通过 cls 
 	# 使用传入的 octets 字节序列创建一个 memoryview，然后使用typecode转换。
 	return cls(*memv) # 拆包转换后的 memoryview，得到构造方法所需的一对参数。构建一个新的实例
 	
-v2 = Vector2d.frombytes(octets)
+v2 = Vector2d.frombytes(bytes(v1))
 
 classmethod和staticmethod
 
@@ -81,7 +81,7 @@ class Demo:
 ... def statmeth(*args):
 ... 	return args # ➋
 ...
->>> Demo.klassmeth() # ➌ # 第一个参数始终是 Demo 类
+>>> Demo.klassmeth()  ➌ # 第一个参数始终是 Demo 类
 (<class '__main__.Demo'>,)
 >>> Demo.klassmeth('spam')
 (<class '__main__.Demo'>, 'spam')
@@ -167,3 +167,76 @@ def __format__(self, fmt=''):
 '(3.0, 4.0)'
 >>> format(v1, '.2f')
 '(3.00, 4.00)'
+
+实现散列
+class Vector2d:
+	typecode = 'd'
+	
+	def __init__(self, x, y):
+		self.__x = float(x) # 把属性标记为私有
+		self.__y = float(y)
+		
+	@property 
+	def x(self): 
+		return self.__x 
+		
+	@property  # @property 装饰器把读值方法标记为特性。
+	def y(self):
+		return self.__y
+			
+	def __iter__(self):
+		return (i for i in (self.x, self.y))
+# 以上方法实现向量不可变
+
+	def __hash__(self):
+		return hash(self.x) ^ hash(self.y)
+# 此时向量变成可散列的
+>>> v1 = Vector2d(3, 4)
+>>> v2 = Vector2d(3.1, 4.2)
+>>> hash(v1), hash(v2)
+(7, 384307168202284039)
+>>> set([v1, v2])
+{Vector2d(3.1, 4.2), Vector2d(3.0, 4.0)}
+
+私有属性
+举个例子。有人编写了一个名为 Dog 的类，这个类的内部用到了 mood
+实例属性，但是没有将其开放。现在，你创建了 Dog 类的子
+类：Beagle。如果你在毫不知情的情况下又创建了名为 mood 的实例属
+性，那么在继承的方法中就会把 Dog 类的 mood 属性覆盖掉。
+为了避免这种情况，如果以 __mood 的形式（两个前导下划线，尾部没
+有或最多有一个下划线）命名实例属性，Python 会把属性名存入实例的
+__dict__ 属性中，而且会在前面加上一个下划线和类名。因此，对
+Dog 类来说，__mood 会变成 _Dog__mood；对 Beagle 类来说，会变成
+_Beagle__mood。这个语言特性叫名称改写（name mangling）。
+>>> v1 = Vector2d(3, 4)
+>>> v1.__dict__
+{'_Vector2d__y': 4.0, '_Vector2d__x': 3.0}
+>>> v1._Vector2d__x
+3.0
+
+使用__slots__类属性节省内存
+默认情况下，Python 在各个实例中名为 __dict__ 的字典里存储实例属
+性
+继承自超类的 __slots__ 属性没有效果。Python 只会使用
+各个类中定义的 __slots__ 属性
+class Vector2d:
+	__slots__ = ('__x', '__y') #通告类的所有实例属性
+	typecode = 'd'
+# ，Python 会在各个实例中使用类似元组的结构存储实例变量，从而避免使用消耗内存的 __dict__ 属性
+
+覆盖类属性
+通过继承，覆盖父类的属性
+class ShortVector2d(Vector2d): # 
+... 	typecode = 'f'
+>>> sv = ShortVector2d(1/11, 1/27) # 
+>>> sv
+ShortVector2d(0.09090909090909091, 0.037037037037037035)
+>>> len(bytes(sv)) # 
+9
+
+所有用于获取字符串和字节序列表示形式的方
+法：__repr__、__str__、__format__ 和 __bytes__。
+把对象转换成数字的几个方法：__abs__、__bool__和
+__hash__。
+用于测试字节序列转换和支持散列（连同 __hash__ 方法）的
+__eq__ 运算符。
