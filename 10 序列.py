@@ -145,4 +145,19 @@ def __eq__(self, other):
 	return True
 	
 def __eq__(self, other):
-	return len(self) == len(other) and all(a == b for a, b in zip(self, other)
+	return len(self) == len(other) and all(a == b for a, b in zip(self, other))
+	
+
+格式化
+浮点数的格式代码 'eEfFgGn%'，整数使用的格式代码有 'bcdoxXn'，字符串使用的是
+'s'。
+def __format__(self, fmt_spec=''):
+	if fmt_spec.endwith('h') #超球面坐标，超过三个的坐标
+		cords = itertools.chain([abs(self)], self.angles()) # 使用 itertools.chain 函数生成生成器表达式，无缝迭代向量的模和各个角坐标。
+		outer_fmt='<{}>' #用尖括号表示极坐标
+	else:
+		cords = self
+		outer_fmt = '({})' #用圆括号表示坐标
+	components = format((c, fmt_spec) for c in cords) # 创建生成器表达式，按需格式化各个坐标元素。
+	return outer_fmt.format(', '.join(components)) # 把以逗号分隔的格式化分量插入尖括号或圆括号。
+
