@@ -172,3 +172,10 @@ TomboList 类的 __mro__ 属性，你会发现它只列出了“真实的”超�
 Tombolist.__mro__ 中没有 Tombola，因此 Tombolist 没有从
 Tombola 中继承任何方法。
 
+使用register的方式
+可以在定义类的时候直接@class.register
+一般这样注册
+Sequence.register(tuple)
+Sequence.register(str)
+Sequence.register(range)
+Sequence.register(memoryview)
