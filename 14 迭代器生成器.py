@@ -135,3 +135,239 @@ def __iter__(self):
 	return (match.group() for match in RE_WORD.finditer(self.text))
 #这里不是生成器函数了，变成了生成器表达式
 #调用__iter__方法会得到一个生成器对象
+
+典型的迭代器模式作用很简单——遍历数据结构
+
+itertools模块提供了很多生成器函数
+import itertools
+gen = itertools.count(1, .5)
+next(gen)不断产出数值
+gen = itertools.takewhile(lambda n: n < 3, itertools.count(1, .5))
+takewhile生成一个使用另一个
+生成器的生成器，给定限定，不会无限产出数值
+
+标注库里的生成器函数
+过滤用生成器
+
+itertools	compress(it, selector_it)	并行处理两个可迭代的对象；如果selector_it中的元素是真值，产出 it 中对应的元素
+itertools	dropwhile(predicate, it)	和takewhile相反，如果pre产出真值，跳过it中的元素
+内置		filter(predicate, it)	过滤器，把it中的元素逐个给predicate(item), 如果产出真值，那么产出it中对应的元素；如果 predicate 是 None，那么只产出真值元素
+itertools	filterfalse(predicate, it)	和filter相反，取出不符合predicate条件的it中的值
+itertools	islice(it, start, stop, step=1)	产出it的切片，it可以是任何可迭代的对象
+itertools	takewhile(predicate, it)	predicate返回真值时产出it里的元素
+
+>>> def vowel(c):
+... return c.lower() in 'aeiou'
+...
+>>> list(filter(vowel, 'Aardvark'))
+['A', 'a', 'a']
+>>> import itertools
+>>> list(itertools.filterfalse(vowel, 'Aardvark'))
+['r', 'd', 'v', 'r', 'k']
+>>> list(itertools.dropwhile(vowel, 'Aardvark'))
+['r', 'd', 'v', 'a', 'r', 'k']
+>>> list(itertools.takewhile(vowel, 'Aardvark'))
+['A', 'a']
+>>> list(itertools.compress('Aardvark', (1,0,1,1,0,1)))
+['A', 'r', 'd', 'a']
+>>> list(itertools.islice('Aardvark', 4))
+['A', 'a', 'r', 'd']
+>>> list(itertools.islice('Aardvark', 4, 7))
+['v', 'a', 'r']
+>>> list(itertools.islice('Aardvark', 1, 7, 2))
+['a', 'd', 'a']
+
+用于映射的生成器函数
+itertools	accumulate(it, [func])	产出累计的总和，如果有func，把前两个元素传给func，计算结果再把下一个传给func，最后产出结果
+内置		enumerate(iterable, start=0)	产出元组，结构是(index, item)
+内置		map(func, it1,it2...)		太熟悉了
+itertools	startmap(func, it)	把 it 中的各个元素传给 func，产出结果；输入的
+可迭代对象应该产出可迭代的元素 iit，然后以func(*iit) 这种形式调用 func
+
+>>> sample = [5, 4, 2, 8, 7, 6, 3, 0, 9, 1]
+>>> import itertools
+>>> list(itertools.accumulate(sample)) # ➊
+[5, 9, 11, 19, 26, 32, 35, 35, 44, 45]
+>>> list(itertools.accumulate(sample, min)) # ➋
+[5, 4, 2, 2, 2, 2, 2, 0, 0, 0]
+>>> list(itertools.accumulate(sample, max)) # ➌
+[5, 5, 5, 8, 8, 8, 8, 8, 9, 9]
+>>> import operator
+>>> list(itertools.accumulate(sample, operator.mul)) # ➍
+[5, 20, 40, 320, 2240, 13440, 40320, 0, 0, 0]
+>>> list(itertools.accumulate(range(1, 11), operator.mul))
+[1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800] # ➎
+
+>>> list(enumerate('albatroz', 1)) # ➊
+[(1, 'a'), (2, 'l'), (3, 'b'), (4, 'a'), (5, 't'), (6, 'r'), (7, 'o'), (8, 'z')]
+>>> import operator
+>>> list(map(operator.mul, range(11), range(11))) # ➋
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+>>> list(map(operator.mul, range(11), [2, 4, 8])) # ➌
+[0, 4, 16]
+>>> list(map(lambda a, b: (a, b), range(11), [2, 4, 8])) # ➍
+[(0, 2), (1, 4), (2, 8)]
+>>> import itertools
+>>> list(itertools.starmap(operator.mul, enumerate('albatroz', 1))) # ➎
+['a', 'll', 'bbb', 'aaaa', 'ttttt', 'rrrrrr', 'ooooooo', 'zzzzzzzz']
+>>> sample = [5, 4, 2, 8, 7, 6, 3, 0, 9, 1]
+>>> list(itertools.starmap(lambda a, b: b/a,
+... enumerate(itertools.accumulate(sample), 1))) # ➏
+[5.0, 4.5, 3.6666666666666665, 4.75, 5.2, 5.333333333333333,
+5.0, 4.375, 4.888888888888889, 4.5]
+
+用于合并的生成器函数
+itertools	chain(it1,it2....)	产出无缝链接的所有元素
+itertools	chain.from_iterable(it)		假如it里的元素都是可迭代对象，把它们拆开无缝链接在一起
+itertools	product(it1,..itN, repeat=1)	计算笛卡尔积，产生N个元素组成的元组
+内置		zip(it1,it2...)		组合
+itertools	ziplongest(it1,it2...,fillvalue=None)	根据最长的组合，缺少的元素用fillvalue填充
+
+>>> list(itertools.chain('ABC', range(2))) # ➊
+['A', 'B', 'C', 0, 1]
+>>> list(itertools.chain(enumerate('ABC'))) # ➋
+[(0, 'A'), (1, 'B'), (2, 'C')]
+>>> list(itertools.chain.from_iterable(enumerate('ABC'))) # ➌
+[0, 'A', 1, 'B', 2, 'C']
+>>> list(zip('ABC', range(5))) # ➍
+[('A', 0), ('B', 1), ('C', 2)]
+>>> list(zip('ABC', range(5), [10, 20, 30, 40])) # ➎
+[('A', 0, 10), ('B', 1, 20), ('C', 2, 30)]
+>>> list(itertools.zip_longest('ABC', range(5))) # ➏
+[('A', 0), ('B', 1), ('C', 2), (None, 3), (None, 4)]
+>>> list(itertools.zip_longest('ABC', range(5), fillvalue='?')) # ➐
+[('A', 0), ('B', 1), ('C', 2), ('?', 3), ('?', 4)]
+
+>>> list(itertools.product('ABC', range(2))) # ➊
+[('A', 0), ('A', 1), ('B', 0), ('B', 1), ('C', 0), ('C', 1)]
+>>> suits = 'spades hearts diamonds clubs'.split()
+>>> list(itertools.product('AK', suits)) # ➋
+[('A', 'spades'), ('A', 'hearts'), ('A', 'diamonds'), ('A', 'clubs'),
+('K', 'spades'), ('K', 'hearts'), ('K', 'diamonds'), ('K', 'clubs')]
+>>> list(itertools.product('ABC')) # ➌
+[('A',), ('B',), ('C',)]
+>>> list(itertools.product('ABC', repeat=2)) # ➍
+[('A', 'A'), ('A', 'B'), ('A', 'C'), ('B', 'A'), ('B', 'B'),
+('B', 'C'), ('C', 'A'), ('C', 'B'), ('C', 'C')]
+>>> list(itertools.product(range(2), repeat=3))
+[(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0),
+(1, 0, 1), (1, 1, 0), (1, 1, 1)]
+>>> rows = itertools.product('AB', range(2), repeat=2)
+>>> for row in rows: print(row)
+...
+('A', 0, 'A', 0)
+('A', 0, 'A', 1)
+('A', 0, 'B', 0)
+('A', 0, 'B', 1)
+('A', 1, 'A', 0)
+('A', 1, 'A', 1)
+('A', 1, 'B', 0)
+('A', 1, 'B', 1)
+('B', 0, 'A', 0)
+('B', 0, 'A', 1)
+('B', 0, 'B', 0)
+('B', 0, 'B', 1)
+('B', 1, 'A', 0)
+('B', 1, 'A', 1)
+('B', 1, 'B', 0)
+('B', 1, 'B', 1)
+
+重新排列的生成器函数
+itertools	combinations(it, out_len)	从it产出out_len个元素的组合
+itertools	combinations_with_replacement(it, out_len)	从it产出out_len个元素的组合,包括相同元素
+itertool	count(start=0, strp=1)	不断产出数字
+itertools	cycle(it)	重复不断从it产出元素
+itertools	permutations(it, out_len=None)	把 out_len 个 it 产出的元素排列在一起，然后产出这些排列；out_len的默认值等于 len(list(it)
+itertools	repeat(item, [times])	重复不断产出指定元素，times指定次数
+
+>>> ct = itertools.count() # ➊
+>>> next(ct) # ➋
+0 >>> next(ct), next(ct), next(ct) #
+➌
+(1, 2, 3)
+>>> list(itertools.islice(itertools.count(1, .3), 3)) # ➍
+[1, 1.3, 1.6]
+>>> cy = itertools.cycle('ABC') # ➎
+>>> next(cy)
+'A'
+>>> list(itertools.islice(cy, 7)) # ➏
+['B', 'C', 'A', 'B', 'C', 'A', 'B']
+>>> rp = itertools.repeat(7) # ➐
+>>> next(rp), next(rp)
+(7, 7)
+>>> list(itertools.repeat(8, 4)) # ➑
+[8, 8, 8, 8]
+>>> list(map(operator.mul, range(11), itertools.repeat(5))) # ➒
+[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+
+combinations、combinations_with_replacement和 permutations 生成器函数，连同 product函数，称为组合学生成器（combinatoric generator）
+>>> list(itertools.combinations('ABC', 2)) # ➊
+[('A', 'B'), ('A', 'C'), ('B', 'C')]
+>>> list(itertools.combinations_with_replacement('ABC', 2)) # ➋
+[('A', 'A'), ('A', 'B'), ('A', 'C'), ('B', 'B'), ('B', 'C'), ('C', 'C')]
+>>> list(itertools.permutations('ABC', 2)) # ➌
+[('A', 'B'), ('A', 'C'), ('B', 'A'), ('B', 'C'), ('C', 'A'), ('C', 'B')]
+>>> list(itertools.product('ABC', repeat=2)) # ➍
+[('A', 'A'), ('A', 'B'), ('A', 'C'), ('B', 'A'), ('B', 'B'), ('B', 'C'),
+('C', 'A'), ('C', 'B'), ('C', 'C')]
+
+重新排列元素的生成器
+itertools	groupby(it, key=None)	产出形式为（key，group）的元素，key是分组标准，group 是生成器，用于产出分组里的元素
+内置		reversed(seq)	倒序产出seq中的元素
+itertools	tee(it, n=2)	产出由N个生成器组成的元组，每个生成器
+用于单独产出输入的可迭代对象中的元素，把一个生成器变成N个生成器
+
+>>> list(itertools.groupby('LLLLAAGGG')) # ➊
+[('L', <itertools._grouper object at 0x102227cc0>),
+('A', <itertools._grouper object at 0x102227b38>),
+('G', <itertools._grouper object at 0x102227b70>)]
+>>> for char, group in itertools.groupby('LLLLAAAGG'): # ➋
+... print(char, '->', list(group))
+...
+L -> ['L', 'L', 'L', 'L']
+A -> ['A', 'A',]
+G -> ['G', 'G', 'G']
+
+>>> animals = ['duck', 'eagle', 'rat', 'giraffe', 'bear',
+... 'bat', 'dolphin', 'shark', 'lion']
+>>> animals.sort(key=len) # ➌
+>>> animals
+['rat', 'bat', 'duck', 'bear', 'lion', 'eagle', 'shark',
+'giraffe', 'dolphin'] #对象要经过排序才能使用groupby
+>>> for length, group in itertools.groupby(animals, len): # ➍
+... print(length, '->', list(group))
+...
+3 -> ['rat', 'bat']
+4 -> ['duck', 'bear', 'lion']
+5 -> ['eagle', 'shark']
+7 -> ['giraffe', 'dolphin']
+
+>>> for length, group in itertools.groupby(reversed(animals), len): # ➎
+... print(length, '->', list(group))
+...
+7 -> ['dolphin', 'giraffe']
+5 -> ['shark', 'eagle']
+4 -> ['lion', 'bear', 'duck']
+3 -> ['bat', 'rat']
+
+>>> list(itertools.tee('ABC'))
+[<itertools._tee object at 0x10222abc8>, <itertools._tee object at 0x10222ac08
+>>> list(itertools.tee('ABC'))
+[<itertools._tee object at 0x10222abc8>, <itertools._tee object at 0x10222ac08>]
+>>> g1, g2 = itertools.tee('ABC')
+>>> next(g1)
+'A'
+>>> next(g2)
+'A'
+>>> next(g2)
+'B'
+>>> list(g1)
+['B', 'C']
+>>> list(g2)
+['C']
+>>> list(zip(*itertools.tee('ABC')))
+[('A', 'A'), ('B', 'B'), ('C', 'C')]
+
+
+yield form把不同的生成器结合在一起使用
+
