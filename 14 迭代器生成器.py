@@ -370,4 +370,112 @@ G -> ['G', 'G', 'G']
 
 
 yield form把不同的生成器结合在一起使用
+def chain(*iterables)
+	for it in iterables:
+		for i in it:
+			yield i
+>>> s = 'ABC'
+>>> t = tuple(range(3))
+>>> list(chain(s, t))
+['A', 'B', 'C', 0, 1, 2]
+
+def chain(*iterables)
+	for it in iterables：
+		yield from it
+>>> list(chain(s, t))
+['A', 'B', 'C', 0, 1, 2]
+yield from代替了内层循环
+
+
+读取迭代器，返回单个值的内置函数
+内置		all(it)		it 中的所有元素都为真值时返回 True，否则返回 False；
+all([]) 返回 True
+内置		any(it)		只要 it 中有元素为真值就返回 True，否则返回 False；
+any([]) 返回 False
+内置		max(it, key=, default=)		返回 it 中值最大的元素；*key 是排序函数，与 sorted 函数中的一样；如果可迭代的对象为空，返回 default
+内置		min(it, key=, default=)		返回 it 中值最小的元素；key 是排序函数，与 sorted 函数中的一样；如果可迭代的对象为空，返回 default
+functools	reduce(func, it, [initial])	把前两个元素传给 fun，然后把计算结果和第三个元素传给 func，以此类推，返回最后的结果；如果提供了initial，把它当作第一个元素传入
+内置		sum(it, start=0)	it 中所有元素的总和，如果提供可选的 start，会把它加
+上（计算浮点数的加法时，可以使用 math.fsum 函数提高精度）
+>>> all([1, 2, 3])
+True
+>>> all([1, 0, 3])
+False
+>>> all([])
+True
+>>> any([1, 2, 3])
+True
+>>> any([1, 0, 3])
+True
+>>> any([0, 0.0])
+False
+>>> any([])
+False
+>>> g = (n for n in [0, 0.0, 7, 8])
+>>> any(g)
+True
+>>> next(g)
+8
+
+iter函数的另外用法
+迭代对象时会用到iter(x)
+另一个用法是传入两个参数，使用常规
+的函数或任何可调用的对象创建迭代器。这样使用时，第一个参数必须
+是可调用的对象，用于不断调用（没有参数），产出各个值；第二个值
+是哨符，这是个标记值，当可调用的对象返回这个值时，触发迭代器抛
+出 StopIteration 异常，而不产出哨符。
+>>> def d6():
+...     return randint(1, 6)
+...
+>>> d6_iter = iter(d6, 1)
+>>> d6_iter
+<callable_iterator object at 0x00000000029BE6A0>
+>>> for roll in d6_iter:
+...     print(roll)
+...
+4
+3
+6
+3
+掷筛子直到抛出1，这时抛出StopIteration
+
+这段代码逐行读取文件，直到遇到空行或者到达文件末尾为止：
+with open('data.txt') as fp:
+	for line in iter(fp, '\n')
+		process_line(line)
+
+把生成器当成协程
+与 .__next__() 方法一样，.send() 方法致使生成器前进到下一个
+yield 语句。不过，.send() 方法还允许使用生成器的客户把数据发给
+自己，即不管传给 .send() 方法什么参数，那个参数都会成为生成器
+函数定义体中对应的 yield 表达式的值。也就是说，.send() 方法允
+许在客户代码和生成器之间双向交换数据。而 .__next__() 方法只允
+许客户从生成器中获取数据。
+像这样使用的话，生成器就变身为协程
+
+协程的例子
+def printer():
+	counter = 0
+	while True:
+		string = (yield)
+		print('{0}, {1}'.format(count, string))
+		count += 1
+
+if __name__ == '__main__':
+	p = printer()
+	next(p)
+	p.send('Hi')
+	p.send('my name is...')
+	p.send('leo')
+
+0 Hi
+1 My name is...
+2 leo
+子程序处理到yield时挂起并返回主程序，主程序通过send唤起子程序并传入数据，以此交替进行
+
+生成器用于生成供迭代的数据
+协程是数据的消费者，虽然在协程中会使用 yield 产出值，但这与迭代无关
+
+
+
 
