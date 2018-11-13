@@ -102,72 +102,206 @@ def avanger():
 值，然后开始 while 循环的下一次迭代，产出 average 变量的值，等
 待下一次为 term 变量赋值。因为averager没有初始值，所以next给average一个NONE的值
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+预激活协程的装饰器
+from funtools import warps
+def coroutine(func):
+@warps(func)
+def primer(*args, **kwargs)
+	gen = func(*args, **kwargs)
+	next(gen)
+	return gen
+return primer
+把被装饰的生成器函数替换成这里的 primer 函数；调用 primer 函
+数时，返回预激后的生成器。
+from coroutil import coroutine ➍
+@coroutine ➎
+def averager():
+...
+
+终止协程和异常处理
+协程中未处理的异常会向上冒泡，传给 next 函数或 send 方法的调用
+方（即触发协程的对象）
+
+generator.throw(exc_type[, exc_value[, traceback]])
+　　致使生成器在暂停的 yield 表达式处抛出指定的异常。如果生成
+器处理了抛出的异常，代码会向前执行到下一个 yield 表达式，而产
+出的值会成为调用 generator.throw 方法得到的返回值。如果生成器
+没有处理抛出的异常，异常会向上冒泡，传到调用方的上下文中。
+generator.close()
+　　致使生成器在暂停的 yield 表达式处抛出 GeneratorExit 异常。
+如果生成器没有处理这个异常，或者抛出了 StopIteration 异常（通
+常是指运行到结尾），调用方不会报错。如果收到 GeneratorExit 异
+常，生成器一定不能产出值，否则解释器会抛出 RuntimeError 异常。
+生成器抛出的其他异常会向上冒泡，传给调用方。
+处理异常
+class DemoException(Exception):
+"""为这次演示定义的异常类型。"""
+def demo_exc_handling():
+	print('-> coroutine started')
+	while True:
+		try:
+			x = yield
+		except DemoException:
+			print('*** DemoException handled. Continuing...')
+		else:
+			print('-> coroutine received: {!r}'.format(x))
+	raise RuntimeError('This line should never run.') #这行代码不会执行，因为只有未处理的异常才会中止那个无限循环，而一旦出现未处理的异常，协程会立即终止。
+激活和关闭协程，不发送异常
+>>> exc_coro = demo_exc_handling()
+>>> next(exc_coro)
+-> coroutine started
+>>> exc_coro.send(11)
+-> coroutine received: 11
+>>> exc_coro.send(22)
+-> coroutine received: 22
+>>> exc_coro.close()
+>>> from inspect import getgeneratorstate
+>>> getgeneratorstate(exc_coro)
+'GEN_CLOSED'
+
+传入DemoException
+>>> exc_coro = demo_exc_handling()
+>>> next(exc_coro)
+-> coroutine started
+>>> exc_coro.send(11)
+-> coroutine received: 11
+>>> exc_coro.throw(DemoException)
+*** DemoException handled. Continuing...
+>>> getgeneratorstate(exc_coro)
+'GEN_SUSPENDED'
+异常被处理了，协程的状态显示在等待状态
+
+但是，如果传入协程的异常没有处理，协程会停止，即状态变成
+'GEN_CLOSED'。
+>>> exc_coro = demo_exc_handling()
+>>> next(exc_coro)
+-> coroutine started
+>>> exc_coro.send(11)
+-> coroutine received: 11
+>>> exc_coro.throw(ZeroDivisionError)
+Traceback (most recent call last):
+...
+ZeroDivisionError
+>>> getgeneratorstate(exc_coro)
+'GEN_CLOSED'
+
+from collections import namedtuple
+Result = namedtuple('Result', 'count average')
+def averager():
+	total = 0.0
+	count = 0
+	while True:
+		term = yield
+		if term =None:
+			break #给的判断条件，让协程退出
+		total += term
+		count += 1
+		average = total/count
+	return Result(count, average)
+
+>>> coro_avg = averager()
+>>> next(coro_avg)
+>>> coro_avg.send(10) ➊
+>>> coro_avg.send(30)
+>>> coro_avg.send(6.5)
+>>> coro_avg.send(None) ➋
+Traceback (most recent call last):
+...
+StopIteration: Result(count=3, average=15.5)
+
+>>> coro_avg = averager()
+>>> next(coro_avg)
+>>> coro_avg.send(10)
+>>> coro_avg.send(30)
+>>> coro_avg.send(6.5)
+>>> try:
+... coro_avg.send(None)
+... except StopIteration as exc:
+... result = exc.value
+...
+>>> result
+Result(count=3, average=15.5)
+
+使用yield from不仅能捕获StopIter异常，还能把value属性的值变成yield from的值
+
+def chain(*iterables)
+	for it in iterables:
+		yield form it
+yield from x 表达式对 x 对象所做的第一件事是，调用 iter(x)，从
+中获取迭代器。因此，x 可以是任何可迭代的对象。
+
+yield from 的主要功能是打开双向通道，把最外层的调用方与最内层
+的子生成器连接起来，这样二者可以直接发送和产出值，还可以直接传
+入异常，而不用在位于中间的协程中添加大量处理异常的样板代码。有
+了这个结构，协程可以通过以前不可能的方式委托职责。
+
+委派生成器在 yield from 表达式处暂停时，调用方可以直
+接把数据发给子生成器，子生成器再把产出的值发给调用方。子生
+成器返回之后，解释器会抛出 StopIteration 异常，并把返回值附
+加到异常对象上，此时委派生成器会恢复
+
+from collections import namedtuple
+Result = namedtuple('Result', 'count average')
+#子生成器
+def averager():
+	total = 0.0
+	count = 0
+	average = None
+	while True:
+		term = yield
+		if term is None: #等待
+			break
+		total += term
+		count += 1
+		average = total/count
+		return Result(count, average)
+#委派生成器
+def grouper(result, key):
+	while True:
+		result[key] = yield from averager()
+#在这里yield from起到传递值的作用，把group.send(value)传给子生成器的yield，而自己不知道传递的值是多少
+
+#客户端代码，调用方
+def main(data):
+	result = {}
+	for key, values in data.items():
+		group = grouper()
+		#外层 for 循环每次迭代会新建一个 grouper 实例，赋值给 group变量
+		next(group) #预激委派生成器，进行到yield from处暂停
+		for value in values:
+			group.send(value) #把value发送给子生成器
+		group.send(None)
+#内层循环结束后，group 实例依旧在 yield from 表达式处暂停，因此，grouper 函数定义体中为 results[key] 赋值的语句还没有执行。
+#如果外层 for 循环的末尾没有 group.send(None)，那么averager 子生成器永远不会终止，委派生成器 group 永远不会再次激活，因此永远不会为 results[key] 赋值。
+
+report(results)
+
+def report(results):
+	for key, result in sorted(results.items)
+		group, unit = key.split(';')
+		print('{:2} {:5} averaging {:.2f}{}'.format(result.count, group, result.average, unit))
+
+data = {
+	'girls;kg':
+		[40.9, 38.5, 44.3, 42.2, 45.2, 41.7, 44.5, 38.0, 40.6, 44.5],
+	'girls;m':
+		[1.6, 1.51, 1.4, 1.3, 1.41, 1.39, 1.33, 1.46, 1.45, 1.43],
+	'boys;kg':
+		[39.0, 40.8, 43.2, 40.8, 43.1, 38.6, 41.4, 40.6, 36.3],
+	'boys;m':
+		[1.38, 1.5, 1.32, 1.25, 1.37, 1.48, 1.25, 1.49, 1.46],
+}
+
+if __name__ == '__main__':
+	main(data)
+
+
+传入委派生成器的异常，除了 GeneratorExit 之外都传给子生成
+器的 throw() 方法。如果调用 throw() 方法时抛出
+StopIteration 异常，委派生成器恢复运行。
+如果把 GeneratorExit 异常传入委派生成器，或者在委派生成器
+上调用 close() 方法，那么在子生成器上调用 close() 方法，如
+果它有的话
 
 
 
