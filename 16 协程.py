@@ -303,22 +303,43 @@ StopIteration 异常，委派生成器恢复运行。
 上调用 close() 方法，那么在子生成器上调用 close() 方法，如
 果它有的话
 
+出租车离散时间模拟
+Event = collections.namedtuple('Event', 'time proc action')
+#在 Event 实例中，time 字段是事件发生时的仿真时间，proc 字段是出租车进程实例的编号，action 字段是描述活动的字符串
+def taxi_process(ident, trips, start_time=0):
+	"""每次改变状态时创建事件，把控制权让给仿真器"""
+#每辆出租车调用一次 taxi_process 函数，创建一个生成器对象，表示各辆出租车的运营过程。ident 是出租车的编号（如上述运行示例中的 0、1、2）；trips 是出租车回家之前的行程数量；start_time是出租车离开车库的时间。
+	time = yield Event(start_time, ident, 'leave garage')
+#产出的第一个 Event 是 'leave garage'。执行到这一行时，协程会暂停，让仿真主循环着手处理排定的下一个事件。需要重新激活这个进程时，主循环会发送（使用 send 方法）当前的仿真时间，赋值给time。
+	for i in range(trips):
+		yield Event(time, ident, 'pick up passenger')
+#产出一个 Event 实例，表示拉到乘客了。协程在这里暂停。需要重新激活这个协程时，主循环会发送（使用 send 方法）当前的时间。
+		yield Event(time, ident, 'drop off passenger')
+#产出一个 Event 实例，表示乘客下车了。协程在这里暂停，等待主循环发送时间，然后重新激活
+	yield Event(time, ident, 'going home')
+#指定的行程数量完成后，for 循环结束，最后产出 'going home'事件。此时，协程最后一次暂停。仿真主循环发送时间后，协程重新激活；不过，这里没有把产出的值赋值给变量，因为用不到了。
+#协程执行到最后时，生成器对象抛出 StopIteration 异常。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+>>> from taxi_sim import taxi_process
+>>> taxi = taxi_process(ident=13, trips=2, start_time=0) ➊
+#trips=2表示两次上下客
+>>> next(taxi) ➋
+Event(time=0, proc=13, action='leave garage')
+#此时在yield Event处暂停，等待下个事件
+>>> taxi.send(_.time + 7) ➌
+Event(time=7, proc=13, action='pick up passenger') ➍
+>>> taxi.send(_.time + 23) ➎
+Event(time=30, proc=13, action='drop off passenger')
+>>> taxi.send(_.time + 5) ➏
+Event(time=35, proc=13, action='pick up passenger')
+>>> taxi.send(_.time + 48) ➐
+Event(time=83, proc=13, action='drop off passenger')
+>>> taxi.send(_.time + 1)
+Event(time=84, proc=13, action='going home') ➑
+>>> taxi.send(_.time + 10) ➒
+Traceback (most recent call last):
+File "<stdin>", line 1, in <module>
+StopIteration
 
 
 
