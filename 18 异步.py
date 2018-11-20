@@ -261,3 +261,6 @@ def download_many(cc_list, base_url, verbose, concur_req):
 
 if __name__ == '__main__':
 	main(download_many, DEFAULT_CONCUR_REQ, MAX_CONCUR_REQ)
+	
+
+还有服务器示例未完。。。
