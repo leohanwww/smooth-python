@@ -77,10 +77,8 @@ def __init__(self, mapping):
 			key += '_' #在后面加上_,变成不是系统关键字可用的
 			self.data[key] = value
 
-用于构建实例的__new__
-这是一个特殊的类方法，不需用@classmethod
-必须返回一个
-实例。返回的实例会作为第一个参数（即 self）传给 __init__ 方
+用于构建实例的__new__这是一个特殊的类方法，不需用@classmethod
+必须返回一个实例。返回的实例会作为第一个参数（即 self）传给 __init__ 方
 法。因为调用 __init__ 方法时要传入实例，而且禁止返回任何值，所
 以 __init__ 方法其实是“初始化方法”。真正的构造方法是 __new__。
 class FrozenJSON:
@@ -106,7 +104,13 @@ class FrozenJSON:
 			return getattr(self.__data, name)
 		else:
 			return FrozenJSON(self.__data[name])
-
+__new__ 方法的第一个参数是类，因为创建的对象通常是那个类的实
+例。所以，在 FrozenJSON.__new__ 方法
+中，super().__new__(cls) 表达式会调用
+object.__new__(FrozenJSON)，而 object 类构建的实例其实是
+FrozenJSON 实例，即那个实例的 __class__ 属性存储的是
+FrozenJSON 类的引用。不过，真正的构建操作由解释器调用 C 语言实
+现的 object.__new__ 方法执行。
 
 
 
